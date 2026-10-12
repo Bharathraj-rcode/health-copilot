@@ -14,6 +14,8 @@ load_dotenv()
 from services import storage
 from services.pipeline import process_file, build_timeline
 
+from services.fhir import build_bundle
+
 storage.init_db()
 app = FastAPI(title="Health Copilot API")
 
@@ -117,3 +119,17 @@ def update_patient(body: PatientUpdate):
         return error("Please enter a valid ABHA ID.", 400)
     storage.set_abha(abha)
     return storage.get_patient()
+
+@app.get("/api/fhir")
+def fhir_all():
+    bundle = build_bundle(storage.list_documents(), storage.get_patient())
+    return JSONResponse(bundle, media_type="application/fhir+json")
+
+
+@app.get("/api/documents/{doc_id}/fhir")
+def fhir_one(doc_id: str):
+    doc = storage.get_document(doc_id)
+    if not doc:
+        return error("Document not found.", 404)
+    bundle = build_bundle([doc], storage.get_patient())
+    return JSONResponse(bundle, media_type="application/fhir+json")
