@@ -1,8 +1,10 @@
 import os
 import json
+import time
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+
 
 load_dotenv()
 
@@ -34,23 +36,29 @@ Rules:
 
 
 def extract_document(file_bytes: bytes, mime_type: str) -> dict:
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    client = genai.Client(
+        api_key=os.getenv("GEMINI_API_KEY"),
+        http_options=types.HttpOptions(timeout=120000),
+    )
+    models = [m.strip() for m in os.getenv("GEMINI_MODELS", os.getenv("GEMINI_MODEL", "")).split(",") if m.strip()]
     last_error = None
-    for _attempt in range(2):  # try once, retry once if it fails
-        try:
-            response = client.models.generate_content(
-                model=model,
-                contents=[
-                    types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
-                    PROMPT,
-                ],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0,
-                ),
-            )
-            return json.loads(response.text)
-        except Exception as e:
-            last_error = e
+    for round_number in range(3):       
+        for model in models:               
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=[
+                        types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+                        PROMPT,
+                    ],
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0,
+                    ),
+                )
+                return json.loads(response.text)
+            except Exception as e:
+                last_error = e
+                print(f"{model} failed: {str(e)[:120]}")
+        time.sleep(5 * (round_number + 1))  # wait 5s, 10s, 15s between rounds
     raise RuntimeError(f"Extraction failed: {last_error}")
