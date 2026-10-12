@@ -1,15 +1,13 @@
+import io
 import os
 import json
 import time
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
-
 
 load_dotenv()
 
 PROMPT = """You are a medical document data extractor.
-Read the attached document and return ONLY valid JSON in exactly this shape:
+Read the document and return ONLY valid JSON in exactly this shape:
 {
   "doc_type": "lab_report | prescription | discharge_summary | other",
   "doc_date": "YYYY-MM-DD or null",
@@ -35,15 +33,52 @@ Rules:
 """
 
 
-def extract_document(file_bytes: bytes, mime_type: str) -> dict:
+def _pdf_text(file_bytes: bytes) -> str:
+    import pdfplumber
+    parts = []
+    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+        for page in pdf.pages:
+            parts.append(page.extract_text() or "")
+    return "\n".join(parts).strip()
+
+
+def _extract_groq(text: str) -> dict:
+    from groq import Groq
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"), timeout=60)
+    model = os.getenv("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")
+    last_error = None
+    for round_number in range(3):
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                temperature=0,
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": PROMPT},
+                    {"role": "user", "content": "Document text:\n\n" + text[:30000]},
+                ],
+            )
+            return json.loads(response.choices[0].message.content)
+        except Exception as e:
+            last_error = e
+            print(f"Groq {model} failed: {str(e)[:150]}")
+            time.sleep(3 * (round_number + 1))
+    raise RuntimeError(f"Groq extraction failed: {last_error}")
+
+
+def _extract_gemini(file_bytes: bytes, mime_type: str) -> dict:
+    # Imported here so the app runs without google-genai installed.
+    from google import genai
+    from google.genai import types
+
     client = genai.Client(
         api_key=os.getenv("GEMINI_API_KEY"),
         http_options=types.HttpOptions(timeout=120000),
     )
     models = [m.strip() for m in os.getenv("GEMINI_MODELS", os.getenv("GEMINI_MODEL", "")).split(",") if m.strip()]
     last_error = None
-    for round_number in range(3):       
-        for model in models:               
+    for round_number in range(3):
+        for model in models:
             try:
                 response = client.models.generate_content(
                     model=model,
@@ -60,5 +95,28 @@ def extract_document(file_bytes: bytes, mime_type: str) -> dict:
             except Exception as e:
                 last_error = e
                 print(f"{model} failed: {str(e)[:120]}")
-        time.sleep(5 * (round_number + 1))  # wait 5s, 10s, 15s between rounds
+        time.sleep(5 * (round_number + 1))
     raise RuntimeError(f"Extraction failed: {last_error}")
+
+
+def extract_document(file_bytes: bytes, mime_type: str) -> dict:
+    use_gemini = os.getenv("USE_GEMINI", "false").strip().lower() == "true"
+    if use_gemini:
+        return _extract_gemini(file_bytes, mime_type)
+
+    # Groq path: needs text. Works for text-based PDFs and plain text.
+    text = ""
+    if mime_type == "application/pdf":
+        text = _pdf_text(file_bytes)
+    elif mime_type.startswith("text/"):
+        text = file_bytes.decode("utf-8", errors="ignore")
+
+    if text:
+        return _extract_groq(text)
+
+    # Photos and scanned PDFs have no text layer: use Gemini only if a key exists.
+    if os.getenv("GEMINI_API_KEY"):
+        return _extract_gemini(file_bytes, mime_type)
+    raise RuntimeError(
+        "This file has no readable text (photo or scanned PDF) and no vision model is configured."
+    )
