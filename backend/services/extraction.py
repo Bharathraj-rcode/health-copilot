@@ -99,12 +99,49 @@ def _extract_gemini(file_bytes: bytes, mime_type: str) -> dict:
     raise RuntimeError(f"Extraction failed: {last_error}")
 
 
+import base64
+
+def _extract_groq_vision(file_bytes: bytes, mime_type: str) -> dict:
+    from groq import Groq
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"), timeout=90)
+    model = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+
+    images = []  # list of (bytes, mime)
+    if mime_type == "application/pdf":
+        import pdfplumber
+        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+            for page in pdf.pages[:2]:
+                buf = io.BytesIO()
+                page.to_image(resolution=150).original.save(buf, format="PNG")
+                images.append((buf.getvalue(), "image/png"))
+    else:
+        images.append((file_bytes, mime_type))
+
+    content = [{"type": "text", "text": PROMPT}]
+    for data, mt in images:
+        b64 = base64.b64encode(data).decode()
+        content.append({"type": "image_url", "image_url": {"url": f"data:{mt};base64,{b64}"}})
+
+    last_error = None
+    for round_number in range(2):
+        try:
+            r = client.chat.completions.create(
+                model=model, temperature=0,
+                response_format={"type": "json_object"},
+                messages=[{"role": "user", "content": content}],
+            )
+            return json.loads(r.choices[0].message.content)
+        except Exception as e:
+            last_error = e
+            print(f"Groq vision {model} failed: {str(e)[:150]}")
+            time.sleep(3)
+    raise RuntimeError(f"Groq vision failed: {last_error}")
+
 def extract_document(file_bytes: bytes, mime_type: str) -> dict:
     use_gemini = os.getenv("USE_GEMINI", "false").strip().lower() == "true"
     if use_gemini:
         return _extract_gemini(file_bytes, mime_type)
 
-    # Groq path: needs text. Works for text-based PDFs and plain text.
     text = ""
     if mime_type == "application/pdf":
         text = _pdf_text(file_bytes)
@@ -114,9 +151,5 @@ def extract_document(file_bytes: bytes, mime_type: str) -> dict:
     if text:
         return _extract_groq(text)
 
-    # Photos and scanned PDFs have no text layer: use Gemini only if a key exists.
-    if os.getenv("GEMINI_API_KEY"):
-        return _extract_gemini(file_bytes, mime_type)
-    raise RuntimeError(
-        "This file has no readable text (photo or scanned PDF) and no vision model is configured."
-    )
+    
+    return _extract_groq_vision(file_bytes, mime_type)

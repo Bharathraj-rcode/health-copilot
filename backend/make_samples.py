@@ -57,4 +57,4 @@ for name, lines in DOCS.items():
         c.drawString(50, y, line)
         y -= 20
     c.save()
-    print("created", name + ".pdf")
+    print("created", name + ".pdf")  
