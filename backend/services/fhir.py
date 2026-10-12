@@ -7,17 +7,60 @@ INTERP = {"high": ("H", "High"), "low": ("L", "Low"), "normal": ("N", "Normal")}
 
 
 LOINC_MAP = [
-    (("hba1c",), "4548-4", "Hemoglobin A1c"),
-    (("hemoglobin",), "718-7", "Hemoglobin"),
-    (("wbc", "white blood", "leukocyte"), "6690-2", "Leukocytes"),
-    (("platelet",), "777-3", "Platelets"),
-    (("fasting glucose", "fasting blood sugar"), "1558-6", "Fasting glucose"),
+    # Diabetes / glucose
+    (("hba1c", "glycated", "glycosylated"), "4548-4", "Hemoglobin A1c/Hemoglobin.total in Blood"),
+    (("fasting glucose", "fasting blood sugar", "fbs"), "1558-6", "Fasting glucose"),
+    (("random glucose", "random blood sugar", "rbs"), "2345-7", "Glucose [Mass/volume] in Serum or Plasma"),
+
+    # Complete blood count (specific names before general ones)
+    (("mchc",), "786-4", "MCHC [Mass/volume]"),
+    (("mch",), "785-6", "MCH [Entitic mass]"),
+    (("mcv",), "787-2", "MCV [Entitic volume]"),
+    (("rdw-cv", "rdw cv", "rdw"), "788-0", "Erythrocyte distribution width [Ratio]"),
+    (("rdw-sd", "rdw sd"), "21000-5", "Erythrocyte distribution width [Entitic volume]"),
+    (("hemoglobin", "haemoglobin"), "718-7", "Hemoglobin [Mass/volume] in Blood"),
+    (("rbc", "red blood", "erythrocyte count"), "789-8", "Erythrocytes [#/volume] in Blood"),
+    (("hct", "hematocrit", "haematocrit", "pcv"), "4544-3", "Hematocrit [Volume Fraction] of Blood"),
+    (("wbc", "white blood", "leukocyte"), "6690-2", "Leukocytes [#/volume] in Blood"),
+    (("neu%", "neutrophils %", "neutrophil %"), "770-8", "Neutrophils/100 leukocytes"),
+    (("lym%", "lymphocytes %", "lymphocyte %"), "736-9", "Lymphocytes/100 leukocytes"),
+    (("mon%", "monocytes %", "monocyte %"), "5905-5", "Monocytes/100 leukocytes"),
+    (("eos%", "eosinophils %", "eosinophil %"), "713-8", "Eosinophils/100 leukocytes"),
+    (("bas%", "basophils %", "basophil %"), "706-2", "Basophils/100 leukocytes"),
+    (("lym#", "lymphocytes #", "lymphocyte count"), "731-0", "Lymphocytes [#/volume] in Blood"),
+    (("plt", "platelet"), "777-3", "Platelets [#/volume] in Blood"),
+    (("esr", "sedimentation"), "4537-7", "Erythrocyte sedimentation rate"),
+
+    # Lipids
     (("ldl",), "13457-7", "LDL cholesterol"),
     (("hdl",), "2085-9", "HDL cholesterol"),
-    (("total cholesterol",), "2093-3", "Total cholesterol"),
+    (("vldl",), "13458-5", "VLDL cholesterol"),
+    (("total cholesterol", "cholesterol, total"), "2093-3", "Cholesterol [Mass/volume] in Serum or Plasma"),
     (("triglyceride",), "2571-8", "Triglycerides"),
-    (("tsh",), "3016-3", "TSH"),
+
+    # Kidney
+    (("creatinine",), "2160-0", "Creatinine [Mass/volume] in Serum or Plasma"),
+    (("blood urea nitrogen", "bun"), "3094-0", "Urea nitrogen [Mass/volume] in Serum or Plasma"),
+    (("uric acid",), "3084-1", "Uric acid [Mass/volume] in Serum or Plasma"),
+
+    # Electrolytes
+    (("sodium",), "2951-2", "Sodium [Moles/volume] in Serum or Plasma"),
+    (("potassium",), "2823-3", "Potassium [Moles/volume] in Serum or Plasma"),
+    (("calcium",), "17861-6", "Calcium [Mass/volume] in Serum or Plasma"),
+
+    # Liver
+    (("sgpt", "alanine"), "1742-6", "Alanine aminotransferase"),
+    (("sgot", "aspartate"), "1920-8", "Aspartate aminotransferase"),
+    (("alkaline phosphatase",), "6768-6", "Alkaline phosphatase"),
+    (("bilirubin",), "1975-2", "Bilirubin.total"),
+    (("albumin",), "1751-7", "Albumin [Mass/volume] in Serum or Plasma"),
+
+    # Thyroid and others
+    (("tsh",), "3016-3", "Thyrotropin [Units/volume] in Serum or Plasma"),
+    (("free t4", "ft4"), "3024-7", "Thyroxine (T4) free"),
     (("crp", "c-reactive", "c reactive"), "1988-5", "C reactive protein"),
+    (("ferritin",), "2276-4", "Ferritin [Mass/volume] in Serum or Plasma"),
+    (("vitamin b12", "b12"), "2132-9", "Vitamin B12 [Mass/volume] in Serum or Plasma"),
 ]
 
 
