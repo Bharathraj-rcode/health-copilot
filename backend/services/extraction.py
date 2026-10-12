@@ -104,7 +104,7 @@ import base64
 def _extract_groq_vision(file_bytes: bytes, mime_type: str) -> dict:
     from groq import Groq
     client = Groq(api_key=os.getenv("GROQ_API_KEY"), timeout=90)
-    model = os.getenv("GROQ_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+    model = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")
 
     images = []  # list of (bytes, mime)
     if mime_type == "application/pdf":
