@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { uploadFile, loadSample, getDocuments, getTimeline, getPatient, saveAbha, fhirUrl } from "./api";
+import { uploadFile, loadSample, getDocuments, getTimeline, getPatient, saveAbha, downloadFile } from "./api";
 
 const SAMPLES = [
   ["cbc_sample", { en: "Blood count report", ta: "இரத்த பரிசோதனை" }],
@@ -10,29 +10,30 @@ const SAMPLES = [
 
 const T = {
   en: {
-    appName: "Health Copilot", byLab: "by Altrixs Lab", tagline: "Understand your medical records in plain language",
+    appName: "Health Copilot", byLab: "Built for the Altrix Labs challenge", tagline: "Understand your medical records in plain language",
     upload: "Upload", timeline: "Timeline",
     drop: "Drag a report here, or click to choose (PDF, JPG, PNG)",
     trySamples: "Or try a sample report", processing: "Reading your document... this can take up to 30 seconds",
     summary: "Plain-language summary", questions: "Questions to ask your doctor",
     labs: "Lab results", medicines: "Medicines listed", conditions: "Conditions mentioned",
     test: "Test", value: "Value", range: "Reference range", status: "Status", source: "Source line",
-    drug: "Medicine", dose: "Dose", freq: "How often", duration: "For how long",
+    drug: "Medicine",     privacy: "Demo uses synthetic data only. Please do not upload real patient records.",dose: "Dose", freq: "How often", duration: "For how long",
     verify: "Please verify", yourRecords: "Your records", empty: "No records yet. Upload a report to begin.",
     all: "All", labsF: "Labs", medsF: "Medicines", condF: "Conditions",
     fhir: "Download FHIR JSON", abha: "ABHA ID (mock)", save: "Save",
+    saved: "Saved", downloadReport: "Download report (PDF)", downloadFhirDoc: "Download FHIR JSON (this report)",
+    reportTitle: "Health Copilot report", generated: "Generated on",
     disclaimer: "Not medical advice. Please consult your doctor.",
     flags: { low: "Low", high: "High", normal: "Normal", unknown: "No range" },
     noTamil: "Tamil summary is not available for this record.",
-    emergencyLead: "EMERGENCY:", emergencyText: "Chest pain, severe breathlessness, or heavy bleeding? Call 108 immediately.",
-    call108: "CALL 108 NOW", nearbyER: "Nearby ER",
     a11yHint: "Elderly-friendly readable fonts & accessible controls",
     contrast: "Contrast", lowData: "Low Data", theme: "Switch theme",
     records: "Records", recordsSub: "Uploaded", attention: "Needs attention", attentionSub: "High or low results",
     toVerify: "To verify", toVerifySub: "Check with source",
+    stripLead: "Your Health Co-Pilot:", stripText: "Understand your medical reports in plain Tamil and English.",
   },
   ta: {
-    appName: "ஹெல்த் கோபைலட்", byLab: "ஆல்ட்ரிக்ஸ் லேப்", tagline: "உங்கள் மருத்துவ அறிக்கைகளை எளிய மொழியில் புரிந்துகொள்ளுங்கள்",
+    appName: "ஹெல்த் கோபைலட்", byLab: "ஆல்ட்ரிக்ஸ் லேப்ஸ் சவாலுக்காக உருவாக்கப்பட்டது", tagline: "உங்கள் மருத்துவ அறிக்கைகளை எளிய மொழியில் புரிந்துகொள்ளுங்கள்",
     upload: "பதிவேற்று", timeline: "காலவரிசை",
     drop: "அறிக்கையை இங்கே இழுத்து விடவும் அல்லது தேர்ந்தெடுக்கவும் (PDF, JPG, PNG)",
     trySamples: "அல்லது மாதிரி அறிக்கையை முயற்சிக்கவும்", processing: "அறிக்கையைப் படிக்கிறது... 30 வினாடிகள் வரை ஆகலாம்",
@@ -43,15 +44,16 @@ const T = {
     verify: "சரிபார்க்கவும்", yourRecords: "உங்கள் பதிவுகள்", empty: "இன்னும் பதிவுகள் இல்லை. ஒரு அறிக்கையைப் பதிவேற்றவும்.",
     all: "அனைத்தும்", labsF: "பரிசோதனைகள்", medsF: "மருந்துகள்", condF: "நிலைகள்",
     fhir: "FHIR JSON பதிவிறக்கம்", abha: "ABHA எண் (மாதிரி)", save: "சேமி",
+    saved: "சேமிக்கப்பட்டது", downloadReport: "அறிக்கையைப் பதிவிறக்கு (PDF)", downloadFhirDoc: "FHIR JSON பதிவிறக்கு (இந்த அறிக்கை)",
+    reportTitle: "ஹெல்த் கோபைலட் அறிக்கை", generated: "உருவாக்கிய தேதி",
     disclaimer: "இது மருத்துவ ஆலோசனை அல்ல. தயவுசெய்து உங்கள் மருத்துவரை அணுகவும்.",
     flags: { low: "குறைவு", high: "அதிகம்", normal: "சாதாரணம்", unknown: "வரம்பு இல்லை" },
     noTamil: "இந்தப் பதிவுக்கு தமிழ் சுருக்கம் கிடைக்கவில்லை.",
-    emergencyLead: "அவசரம்:", emergencyText: "நெஞ்சு வலி, கடுமையான மூச்சுத் திணறல் அல்லது அதிக ரத்தப்போக்கா? உடனே 108-ஐ அழைக்கவும்.",
-    call108: "இப்போதே 108 அழை", nearbyER: "அருகிலுள்ள ER",
     a11yHint: "முதியோர்களுக்கான பெரிய எழுத்து & உயர் மாறுபாடு வசதி",
     contrast: "உயர் மாறுபாடு", lowData: "குறைந்த தரவு", theme: "தீம் மாற்று",
-    records: "பதிவுகள்", recordsSub: "பதிவேற்றியவை", attention: "கவனம் தேவை", attentionSub: "அதிகம் அல்லது குறைவு",
+    records: "பதிவுகள்",    privacy: "இது டெமோ. உண்மையான நோயாளி பதிவுகளைப் பதிவேற்ற வேண்டாம்.", recordsSub: "பதிவேற்றியவை", attention: "கவனம் தேவை", attentionSub: "அதிகம் அல்லது குறைவு",
     toVerify: "சரிபார்க்க", toVerifySub: "மூலத்துடன் ஒப்பிடுக",
+    stripLead: "உங்கள் அன்றாட உடல்நலத் துணைவன்:", stripText: "மருத்துவ அறிக்கைகளை எளிய தமிழிலும் ஆங்கிலத்திலும் புரிந்துகொள்ளுங்கள்.",
   },
 };
 
@@ -61,9 +63,6 @@ const Svg = ({ children, size = 20 }) => (
     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
 );
 const IconPulse = () => <Svg size={24}><path d="M3 12h4l2-6 4 12 2-6h6" /></Svg>;
-const IconAlert = () => <Svg size={18}><path d="M12 3l10 18H2L12 3z" /><path d="M12 10v4M12 18h.01" /></Svg>;
-const IconPhone = () => <Svg size={14}><path d="M5 3h4l2 5-2.5 1.5a11 11 0 006 6L16 13l5 2v4a2 2 0 01-2 2A16 16 0 013 5a2 2 0 012-2z" /></Svg>;
-const IconPin = () => <Svg size={14}><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></Svg>;
 const IconTranslate = () => <Svg size={16}><path d="M4 5h9M8.5 3v2M6 5c1 4 3.5 7 7 9M12 5c-1 4-3.5 7-7 9" /><path d="M13 21l4-10 4 10M14.5 18h5" /></Svg>;
 const IconType = () => <Svg size={15}><path d="M5 6V4h14v2M12 4v16M9 20h6" /></Svg>;
 const IconEye = () => <Svg size={15}><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></Svg>;
@@ -104,7 +103,7 @@ function Gauge({ value, low, high, flag, rangeText }) {
   );
 }
 
-function DocView({ doc, lang, t }) {
+function DocView({ doc, lang, t, abha, onPrint, onFhir }) {
   const s = doc.summary;
   const text = lang === "ta" ? s.ta : s.en;
   const questions = (s.questions_for_doctor && s.questions_for_doctor[lang]) || [];
@@ -115,6 +114,17 @@ function DocView({ doc, lang, t }) {
 
   return (
     <div>
+      <div className="print-only report-head">
+        <h1>{t.reportTitle}</h1>
+        <div>{t.abha}: {abha}</div>
+        <div>{t.generated}: {new Date().toLocaleDateString()}</div>
+      </div>
+
+      <div className="actions">
+        <button className="btn-ghost" onClick={() => onPrint(doc)}><IconDownload />{t.downloadReport}</button>
+        <button className="btn-ghost" onClick={() => onFhir(doc)}><IconDownload />{t.downloadFhirDoc}</button>
+      </div>
+
       <div className="card">
         <div className="doc-meta">
           <span className="file">{doc.filename}</span>
@@ -205,6 +215,7 @@ export default function App() {
   const [lang, setLang] = useState("en");
   const [tab, setTab] = useState("upload");
   const [abha, setAbha] = useState("");
+  const [abhaMsg, setAbhaMsg] = useState("");
   const [docs, setDocs] = useState([]);
   const [events, setEvents] = useState([]);
   const [current, setCurrent] = useState(null);
@@ -262,7 +273,37 @@ export default function App() {
     try {
       const p = await saveAbha(abha);
       setAbha(p.abha_id);
+      setAbhaMsg(t.saved);
       setError("");
+    } catch (e) {
+      setAbhaMsg("");
+      setError(e.message);
+    }
+  }
+
+  // Opens the print window. Choose "Save as PDF" as the destination.
+  function printReport(doc) {
+    const old = document.title;
+    document.title = "Health Copilot report - " + doc.filename.replace(/\.[^.]+$/, "");
+    const restore = () => {
+      document.title = old;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+  }
+
+  async function downloadAll() {
+    try {
+      await downloadFile("/api/fhir", "health-copilot-fhir.json");
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function downloadDocFhir(doc) {
+    try {
+      await downloadFile(`/api/documents/${doc.id}/fhir`, `${doc.id}-fhir.json`);
     } catch (e) {
       setError(e.message);
     }
@@ -278,17 +319,10 @@ export default function App() {
 
   return (
     <>
-      <div className="emergency">
-        <div className="emergency-inner">
-          <div className="emergency-msg">
-            <span className="pulse-dot" /><IconAlert />
-            <span><b>{t.emergencyLead}</b> {t.emergencyText}</span>
-          </div>
-          <div className="emergency-actions">
-            <a className="pill-btn white" href="tel:108"><IconPhone />{t.call108}</a>
-            <a className="pill-btn dark" target="_blank" rel="noreferrer"
-              href="https://www.google.com/maps/search/emergency+hospital+near+me"><IconPin />{t.nearbyER}</a>
-          </div>
+      <div className="strip">
+        <div className="strip-inner">
+          <span className="pulse-dot" />
+          <span><b>{t.stripLead}</b> {t.stripText}</span>
         </div>
       </div>
 
@@ -328,7 +362,7 @@ export default function App() {
             <div className="logo-mark"><IconPulse /></div>
             <div className="logo-text">
               <b>{t.appName}</b>
-              <span>{lang === "en" ? "by " : ""}<em>{t.byLab}</em></span>
+              <span><em>{t.byLab}</em></span>
             </div>
           </div>
           <nav className="nav">
@@ -336,7 +370,7 @@ export default function App() {
             <button className={tab === "timeline" ? "on" : ""} onClick={() => setTab("timeline")}><IconClock />{t.timeline}</button>
           </nav>
           <div className="topbar-right">
-            <a className="fhir" href={fhirUrl()} target="_blank" rel="noreferrer"><IconDownload />{t.fhir}</a>
+            <button className="fhir" onClick={downloadAll}><IconDownload />{t.fhir}</button>
           </div>
         </div>
       </header>
@@ -349,9 +383,10 @@ export default function App() {
             <div className="abha">
               <label htmlFor="abha-input">{t.abha}</label>
               <div className="row">
-                <input id="abha-input" value={abha} onChange={(e) => setAbha(e.target.value)} />
+                <input id="abha-input" value={abha} onChange={(e) => { setAbha(e.target.value); setAbhaMsg(""); }} />
                 <button className="small-btn" onClick={onSaveAbha}>{t.save}</button>
               </div>
+              {abhaMsg && <div className="abha-msg" role="status">{abhaMsg}</div>}
             </div>
           </div>
           <div className="tiles">
@@ -360,7 +395,8 @@ export default function App() {
             <div className="tile"><div className="tile-label">{t.toVerify}</div><b>{toVerify}</b><div className="tile-sub">{t.toVerifySub}</div></div>
           </div>
         </section>
-
+        
+        <p className="notice">{t.privacy}</p>
         {error && <div className="error" role="alert">{error}</div>}
 
         {tab === "upload" && (
@@ -400,7 +436,9 @@ export default function App() {
               </div>
             )}
 
-            {current ? <DocView doc={current} lang={lang} t={t} /> : !busy && <p className="muted center empty">{t.empty}</p>}
+            {current
+              ? <DocView doc={current} lang={lang} t={t} abha={abha} onPrint={printReport} onFhir={downloadDocFhir} />
+              : !busy && <p className="muted center empty">{t.empty}</p>}
           </>
         )}
 

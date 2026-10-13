@@ -35,3 +35,22 @@ export const saveAbha = (abha_id) =>
     body: JSON.stringify({ abha_id }),
   });
 export const fhirUrl = () => BASE + "/api/fhir";
+
+export async function downloadFile(path, filename) {
+  let res;
+  try {
+    res = await fetch(BASE + path);
+  } catch {
+    throw new Error("Cannot reach the server. If it was idle, wait a minute and try again.");
+  }
+  if (!res.ok) throw new Error("Could not download the file. Please try again.");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

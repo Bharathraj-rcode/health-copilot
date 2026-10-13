@@ -76,26 +76,15 @@ body.low-data *, body.low-data *::before, body.low-data *::after {
 }
 body.low-data { background-image: none; }
 
-/* ---------- Emergency strip ---------- */
-.emergency {
-  background: linear-gradient(90deg, #dc2626, #b91c1c);
-  color: #fff;
-}
-.emergency-inner {
+/* ---------- Red brand strip ---------- */
+.strip { background: linear-gradient(90deg, #dc2626, #b91c1c); color: #fff; }
+.strip-inner {
   max-width: 1180px; margin: 0 auto; padding: 10px 20px;
-  display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 10px; font-size: 0.95rem; font-weight: 500;
 }
-.emergency-msg { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 0.95rem; }
-.emergency-msg b { font-weight: 700; }
+.strip-inner b { font-weight: 800; }
 .pulse-dot { width: 10px; height: 10px; border-radius: 50%; background: #fbbf24; flex: none; animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.35; } }
-.emergency-actions { display: flex; gap: 8px; }
-.pill-btn {
-  display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 6px 14px;
-  font-weight: 700; font-size: 0.82rem; text-decoration: none; border: 0;
-}
-.pill-btn.white { background: #fff; color: #b91c1c; }
-.pill-btn.dark { background: rgba(0, 0, 0, 0.22); color: #fff; }
 
 /* ---------- Accessibility bar ---------- */
 .a11y { background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -154,6 +143,7 @@ body.low-data { background-image: none; }
   padding: 10px 16px; border-radius: 14px;
 }
 .fhir:hover { background: var(--surface); }
+button.fhir { cursor: pointer; }
 
 /* ---------- Page ---------- */
 .page { max-width: 1180px; margin: 0 auto; padding: 28px 20px 24px; }
@@ -186,6 +176,7 @@ body.low-data { background-image: none; }
   border: 0; background: #fff; color: var(--deep-1); padding: 10px 18px; border-radius: 12px; font-weight: 700;
 }
 .small-btn:hover { background: #d1fae5; }
+.abha-msg { margin-top: 8px; font-size: 0.85rem; font-weight: 600; color: #d1fae5; }
 
 .tiles { display: flex; gap: 12px; flex-wrap: wrap; position: relative; z-index: 1; }
 .tile {
@@ -242,6 +233,10 @@ body.low-data { background-image: none; }
 .small { font-size: 0.86rem; }
 .center { text-align: center; }
 .empty { padding: 36px 0; }
+
+/* ---------- Report actions (download buttons) ---------- */
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.print-only { display: none; }
 
 /* ---------- Cards ---------- */
 .card {
@@ -352,4 +347,28 @@ footer.disclaimer {
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* ---------- Print: the "Download report (PDF)" layout ---------- */
+@media print {
+  :root, :root[data-theme="dark"] {
+    --surface: #fff; --surface-2: #f1f5f9; --ink: #0f172a; --muted: #5b6b80; --line: #cbd5e1;
+    --brand: #0f766e; --brand-soft: #e6f6f3; --brand-border: #b5e3dc;
+    --low: #1d5fb4; --low-soft: #e3eefb; --high: #b91c1c; --high-soft: #fee8e8;
+    --normal: #15803d; --normal-soft: #dcf5e5; --unknown: #5b6b80; --unknown-soft: #e9eef3;
+    --warn: #8a5a05; --warn-soft: #fdf0d2; --gauge-zone: #b6e2c7;
+  }
+  body {
+    background: #fff !important; background-image: none !important; color: #000;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .strip, .a11y, .topbar, .banner, .drop, .samples, .loading, .error, .actions { display: none !important; }
+  .print-only { display: block !important; }
+  .page { max-width: none; padding: 0; }
+  .card { box-shadow: none; break-inside: avoid; margin: 12px 0; }
+  .scroll { overflow: visible; }
+  table { min-width: 0; }
+  .report-head { margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; }
+  .report-head h1 { margin: 0 0 4px; font-size: 1.4rem; }
+  footer.disclaimer { border: 0; padding: 12px 0; }
 }
