@@ -17,12 +17,13 @@ const T = {
     summary: "Plain-language summary", questions: "Questions to ask your doctor",
     labs: "Lab results", medicines: "Medicines listed", conditions: "Conditions mentioned",
     test: "Test", value: "Value", range: "Reference range", status: "Status", source: "Source line",
-    drug: "Medicine",     privacy: "Demo uses synthetic data only. Please do not upload real patient records.",dose: "Dose", freq: "How often", duration: "For how long",
+    drug: "Medicine", dose: "Dose", freq: "How often", duration: "For how long",
     verify: "Please verify", yourRecords: "Your records", empty: "No records yet. Upload a report to begin.",
     all: "All", labsF: "Labs", medsF: "Medicines", condF: "Conditions",
     fhir: "Download FHIR JSON", abha: "ABHA ID (mock)", save: "Save",
-    saved: "Saved", downloadReport: "Download report (PDF)", downloadFhirDoc: "Download FHIR JSON (this report)",
+    saved: "Saved", downloadReport: "Download report (PDF)",
     reportTitle: "Health Copilot report", generated: "Generated on",
+    privacy: "Demo uses synthetic data only. Please do not upload real patient records.",
     disclaimer: "Not medical advice. Please consult your doctor.",
     flags: { low: "Low", high: "High", normal: "Normal", unknown: "No range" },
     noTamil: "Tamil summary is not available for this record.",
@@ -44,14 +45,15 @@ const T = {
     verify: "சரிபார்க்கவும்", yourRecords: "உங்கள் பதிவுகள்", empty: "இன்னும் பதிவுகள் இல்லை. ஒரு அறிக்கையைப் பதிவேற்றவும்.",
     all: "அனைத்தும்", labsF: "பரிசோதனைகள்", medsF: "மருந்துகள்", condF: "நிலைகள்",
     fhir: "FHIR JSON பதிவிறக்கம்", abha: "ABHA எண் (மாதிரி)", save: "சேமி",
-    saved: "சேமிக்கப்பட்டது", downloadReport: "அறிக்கையைப் பதிவிறக்கு (PDF)", downloadFhirDoc: "FHIR JSON பதிவிறக்கு (இந்த அறிக்கை)",
+    saved: "சேமிக்கப்பட்டது", downloadReport: "அறிக்கையைப் பதிவிறக்கு (PDF)",
     reportTitle: "ஹெல்த் கோபைலட் அறிக்கை", generated: "உருவாக்கிய தேதி",
+    privacy: "இது டெமோ. உண்மையான நோயாளி பதிவுகளைப் பதிவேற்ற வேண்டாம்.",
     disclaimer: "இது மருத்துவ ஆலோசனை அல்ல. தயவுசெய்து உங்கள் மருத்துவரை அணுகவும்.",
     flags: { low: "குறைவு", high: "அதிகம்", normal: "சாதாரணம்", unknown: "வரம்பு இல்லை" },
     noTamil: "இந்தப் பதிவுக்கு தமிழ் சுருக்கம் கிடைக்கவில்லை.",
     a11yHint: "முதியோர்களுக்கான பெரிய எழுத்து & உயர் மாறுபாடு வசதி",
     contrast: "உயர் மாறுபாடு", lowData: "குறைந்த தரவு", theme: "தீம் மாற்று",
-    records: "பதிவுகள்",    privacy: "இது டெமோ. உண்மையான நோயாளி பதிவுகளைப் பதிவேற்ற வேண்டாம்.", recordsSub: "பதிவேற்றியவை", attention: "கவனம் தேவை", attentionSub: "அதிகம் அல்லது குறைவு",
+    records: "பதிவுகள்", recordsSub: "பதிவேற்றியவை", attention: "கவனம் தேவை", attentionSub: "அதிகம் அல்லது குறைவு",
     toVerify: "சரிபார்க்க", toVerifySub: "மூலத்துடன் ஒப்பிடுக",
     stripLead: "உங்கள் அன்றாட உடல்நலத் துணைவன்:", stripText: "மருத்துவ அறிக்கைகளை எளிய தமிழிலும் ஆங்கிலத்திலும் புரிந்துகொள்ளுங்கள்.",
   },
@@ -103,7 +105,7 @@ function Gauge({ value, low, high, flag, rangeText }) {
   );
 }
 
-function DocView({ doc, lang, t, abha, onPrint, onFhir }) {
+function DocView({ doc, lang, t, abha, onPrint }) {
   const s = doc.summary;
   const text = lang === "ta" ? s.ta : s.en;
   const questions = (s.questions_for_doctor && s.questions_for_doctor[lang]) || [];
@@ -122,7 +124,6 @@ function DocView({ doc, lang, t, abha, onPrint, onFhir }) {
 
       <div className="actions">
         <button className="btn-ghost" onClick={() => onPrint(doc)}><IconDownload />{t.downloadReport}</button>
-        <button className="btn-ghost" onClick={() => onFhir(doc)}><IconDownload />{t.downloadFhirDoc}</button>
       </div>
 
       <div className="card">
@@ -281,7 +282,7 @@ export default function App() {
     }
   }
 
-  // Opens the print window. Choose "Save as PDF" as the destination.
+  // Opens the print window. Choose "Save as PDF" 
   function printReport(doc) {
     const old = document.title;
     document.title = "Health Copilot report - " + doc.filename.replace(/\.[^.]+$/, "");
@@ -293,17 +294,10 @@ export default function App() {
     window.print();
   }
 
+  // Downloads all records as one FHIR bundle.
   async function downloadAll() {
     try {
       await downloadFile("/api/fhir", "health-copilot-fhir.json");
-    } catch (e) {
-      setError(e.message);
-    }
-  }
-
-  async function downloadDocFhir(doc) {
-    try {
-      await downloadFile(`/api/documents/${doc.id}/fhir`, `${doc.id}-fhir.json`);
     } catch (e) {
       setError(e.message);
     }
@@ -395,8 +389,9 @@ export default function App() {
             <div className="tile"><div className="tile-label">{t.toVerify}</div><b>{toVerify}</b><div className="tile-sub">{t.toVerifySub}</div></div>
           </div>
         </section>
-        
+
         <p className="notice">{t.privacy}</p>
+
         {error && <div className="error" role="alert">{error}</div>}
 
         {tab === "upload" && (
@@ -437,7 +432,7 @@ export default function App() {
             )}
 
             {current
-              ? <DocView doc={current} lang={lang} t={t} abha={abha} onPrint={printReport} onFhir={downloadDocFhir} />
+              ? <DocView doc={current} lang={lang} t={t} abha={abha} onPrint={printReport} />
               : !busy && <p className="muted center empty">{t.empty}</p>}
           </>
         )}

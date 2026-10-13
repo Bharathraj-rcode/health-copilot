@@ -36,6 +36,7 @@ export const saveAbha = (abha_id) =>
   });
 export const fhirUrl = () => BASE + "/api/fhir";
 
+// Saves a file from the backend into the browser's Downloads folder.
 export async function downloadFile(path, filename) {
   let res;
   try {
